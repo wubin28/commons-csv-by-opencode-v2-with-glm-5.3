@@ -264,6 +264,8 @@ public final class CSVFormat implements Serializable {
 
         private String recordSeparator;
 
+        private String[] requiredHeaders;
+
         private boolean skipHeaderRecord;
 
         private boolean lenientEof;
@@ -300,6 +302,7 @@ public final class CSVFormat implements Serializable {
             this.quoteMode = csvFormat.quoteMode;
             this.quotedNullString = csvFormat.quotedNullString;
             this.recordSeparator = csvFormat.recordSeparator;
+            this.requiredHeaders = csvFormat.requiredHeaders;
             this.skipHeaderRecord = csvFormat.skipHeaderRecord;
             this.trailingData = csvFormat.trailingData;
             this.trailingDelimiter = csvFormat.trailingDelimiter;
@@ -860,6 +863,29 @@ public final class CSVFormat implements Serializable {
          */
         public Builder setRecordSeparator(final String recordSeparator) {
             this.recordSeparator = recordSeparator;
+            return this;
+        }
+
+        /**
+         * Sets the header names that parsed input must contain (required headers).
+         *
+         * <p>
+         * The parser fails before the first data record when the header of the parsed input is missing any of these names.
+         * The name lookup uses the same mapping as {@link CSVRecord#get(String)}, so {@link Builder#setIgnoreHeaderCase(boolean)} applies and
+         * surrounding spaces are significant. A {@code null} argument or an empty array means "no required headers"; both are normalized to
+         * {@code null}. Note: unlike {@link #setHeader(String...)}, an empty array does not trigger any automatic behavior.
+         * </p>
+         *
+         * <p>
+         * This setting is only used for parsing; printing ignores it.
+         * </p>
+         *
+         * @param requiredHeaders The required header names, or null/empty for none.
+         * @return This instance.
+         */
+        public Builder setRequiredHeaders(final String... requiredHeaders) {
+            final String[] clone = CSVFormat.clone(requiredHeaders);
+            this.requiredHeaders = clone == null || clone.length == 0 ? null : clone;
             return this;
         }
 
@@ -1630,6 +1656,9 @@ public final class CSVFormat implements Serializable {
     /** For output. */
     private final String recordSeparator;
 
+    /** The header names that parsed input must contain, null if none. */
+    private final String[] requiredHeaders;
+
     /** Whether to skip the header record. */
     private final boolean skipHeaderRecord;
 
@@ -1669,6 +1698,7 @@ public final class CSVFormat implements Serializable {
         this.quoteMode = builder.quoteMode;
         this.quotedNullString = builder.quotedNullString;
         this.recordSeparator = builder.recordSeparator;
+        this.requiredHeaders = builder.requiredHeaders;
         this.skipHeaderRecord = builder.skipHeaderRecord;
         this.trailingData = builder.trailingData;
         this.trailingDelimiter = builder.trailingDelimiter;
@@ -1736,6 +1766,7 @@ public final class CSVFormat implements Serializable {
                 ignoreSurroundingSpaces == other.ignoreSurroundingSpaces && lenientEof == other.lenientEof && maxRows == other.maxRows &&
                 Objects.equals(nullString, other.nullString) && Objects.equals(quoteCharacter, other.quoteCharacter) && quoteMode == other.quoteMode &&
                 Objects.equals(quotedNullString, other.quotedNullString) && Objects.equals(recordSeparator, other.recordSeparator) &&
+                Arrays.equals(requiredHeaders, other.requiredHeaders) &&
                 skipHeaderRecord == other.skipHeaderRecord && trailingData == other.trailingData && trailingDelimiter == other.trailingDelimiter &&
                 trim == other.trim;
     }
@@ -1898,6 +1929,15 @@ public final class CSVFormat implements Serializable {
      */
     public String[] getHeader() {
         return headers != null ? headers.clone() : null;
+    }
+
+    /**
+     * Gets the required header names.
+     *
+     * @return A copy of the required header array; {@code null} if no required headers are set.
+     */
+    public String[] getRequiredHeaders() {
+        return requiredHeaders != null ? requiredHeaders.clone() : null;
     }
 
     /**
@@ -2082,6 +2122,7 @@ public final class CSVFormat implements Serializable {
         int result = 1;
         result = prime * result + Arrays.hashCode(headerComments);
         result = prime * result + Arrays.hashCode(headers);
+        result = prime * result + Arrays.hashCode(requiredHeaders);
         result = prime * result + Objects.hash(allowMissingColumnNames, autoFlush, commentMarker, delimiter, duplicateHeaderMode, escapeCharacter,
                 ignoreEmptyLines, ignoreHeaderCase, ignoreSurroundingSpaces, lenientEof, maxRows, nullString, quoteCharacter, quoteMode, quotedNullString,
                 recordSeparator, skipHeaderRecord, trailingData, trailingDelimiter, trim);
@@ -2744,6 +2785,10 @@ public final class CSVFormat implements Serializable {
             sb.append(Constants.SP);
             sb.append("Header:").append(Arrays.toString(headers));
         }
+        if (requiredHeaders != null) {
+            sb.append(Constants.SP);
+            sb.append("RequiredHeaders:").append(Arrays.toString(requiredHeaders));
+        }
         return sb.toString();
     }
 
@@ -2801,6 +2846,10 @@ public final class CSVFormat implements Serializable {
                             Arrays.toString(headers)));
                 }
             }
+        }
+        // Required headers need a header to be checked against; without one the configuration contradicts itself.
+        if (requiredHeaders != null && headers == null) {
+            throw new IllegalArgumentException(String.format("Required headers %s are set but no header is defined", Arrays.toString(requiredHeaders)));
         }
     }
 

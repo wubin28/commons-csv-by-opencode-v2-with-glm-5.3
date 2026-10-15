@@ -678,6 +678,20 @@ public final class CSVParser implements Iterable<CSVRecord>, Closeable {
                 }
             }
         }
+        // Check required headers after the loop above: the mapping is complete here and structural
+        // problems (missing or duplicate names) have already failed inside the loop.
+        final String[] requiredHeaders = format.getRequiredHeaders();
+        if (requiredHeaders != null && headerMap != null) {
+            final List<String> missing = new ArrayList<>(requiredHeaders.length);
+            for (final String requiredHeader : requiredHeaders) {
+                if (!headerMap.containsKey(requiredHeader) && !missing.contains(requiredHeader)) {
+                    missing.add(requiredHeader);
+                }
+            }
+            if (!missing.isEmpty()) {
+                throw new CSVException("Missing required header(s) %s in %s", missing, headerNames == null ? Collections.emptyList() : headerNames);
+            }
+        }
         // Make header names Collection immutable
         return new Headers(headerMap, headerNames == null ? Collections.emptyList() : Collections.unmodifiableList(headerNames));
     }

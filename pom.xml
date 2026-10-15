@@ -190,6 +190,7 @@
               <inputExclude>src/test/resources/org/apache/commons/csv/ferc.gov/contract.txt</inputExclude>
               <inputExclude>src/test/resources/org/apache/commons/csv/ferc.gov/transaction.txt</inputExclude>
               <inputExclude>src/test/resources/**/*.bin</inputExclude>
+              <inputExclude>src/test/resources/org/apache/commons/csv/requiredheaders/**/*.approved.md</inputExclude>
               <inputExclude>src/test/resources/org/apache/commons/csv/CSV-259/sample.txt</inputExclude>
               <inputExclude>src/test/resources/org/apache/commons/csv/CSVFileParser/testCSV246.csv</inputExclude>
               <inputExclude>src/test/resources/org/apache/commons/csv/CSVFileParser/testCSV246_checkWithNoComment.txt</inputExclude>
